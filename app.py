@@ -1,102 +1,75 @@
 import streamlit as st
 import pandas as pd
-import random
-import altair as a
-from collections import Counter
 
-st.set_page_config(page_title="Tool Soi Cầu Baccarat", layout="wide")
+# Cấu hình giao diện tối ưu cho mobile
+st.set_page_config(page_title="Soi cầu Baccarat", layout="centered")
 
-# Sidebar - Nhập dữ liệu & tùy chọn
-with st.sidebar:
-    st.title("🎯 Soi Cầu Baccarat")
-    raw_input = st.text_area("🔢 Nhập chuỗi kết quả (P, B, T cách nhau bằng dấu phẩy):", height=150)
-    filter_option = st.selectbox("📂 Lọc lịch sử theo:", ["Tất cả", "Player", "Banker", "Tie"])
-    predict_button = st.button("🔮 Dự đoán tiếp theo")
-    st.markdown("---")
-    st.markdown("💡 Ghi chú soi cầu:")
-    user_note = st.text_area("✏️ Nhập ghi chú cho chuỗi này", height=100)
+st.title("🔮 Soi cầu Baccarat thông minh")
 
-# Hàm xử lý dữ liệu
-def parse_input(data):
-    return [x.strip().upper() for x in data.split(",") if x.strip().upper() in ["P", "B", "T"]]
+# --- Nhập kết quả mới (chính giữa) ---
+st.subheader("🎯 Nhập kết quả mới")
+if "history" not in st.session_state:
+    st.session_state.history = []
 
-def filter_history(data, option):
-    if option == "Tất cả":
-        return data
-    mapping = {"Player": "P", "Banker": "B", "Tie": "T"}
-    return [x for x in data if x == mapping[option]]
-
-def count_streaks(data):
-    if not data: return []
-    streaks = []
-    current = data[0]
-    count = 1
-    for x in data[1:]:
-        if x == current:
-            count += 1
-        else:
-            streaks.append((current, count))
-            current = x
-            count = 1
-    streaks.append((current, count))
-    return streaks
-
-def smart_predict(data):
-    if not data: return "Không đủ dữ liệu"
-    last = data[-1]
-    counts = Counter(data[-10:])  # thống kê 10 ván gần nhất
-    if counts["P"] > counts["B"]:
-        return "Player"
-    elif counts["B"] > counts["P"]:
-        return "Banker"
-    elif last == "T":
-        return random.choice(["Player", "Banker"])  # sau Tie thường không rõ xu hướng
-    return random.choice(["Player", "Banker", "Tie"])
-
-# Phân tích
-parsed_data = parse_input(raw_input)
-filtered_data = filter_history(parsed_data, filter_option)
-
-# Giao diện chính
-st.title("🧠 Phân Tích & Dự Đoán Baccarat")
-
-col1, col2 = st.columns(2)
-
+col1, col2 = st.columns([2, 1])
 with col1:
-    st.subheader("📜 Lịch sử kết quả")
-    st.write(f"Tổng số: {len(filtered_data)} kết quả sau lọc")
-    st.write(filtered_data)
-
-    if parsed_data:
-        st.subheader("📊 Biểu đồ tỷ lệ")
-        df_counts = pd.DataFrame(Counter(parsed_data).items(), columns=["Kết quả", "Số lần"])
-        chart = alt.Chart(df_counts).mark_bar().encode(
-            x=alt.X('Kết quả', sort=["P", "B", "T"]),
-            y='Số lần',
-            color='Kết quả'
-        ).properties(width=300)
-        st.altair_chart(chart)
-
-        st.subheader("📈 Chuỗi liên tiếp")
-        streaks = count_streaks(parsed_data)
-        df_streaks = pd.DataFrame(streaks, columns=["Kết quả", "Số lần"])
-        st.dataframe(df_streaks)
-
+    new_result = st.text_input("Kết quả (P/B/T):", max_chars=1)
 with col2:
-    st.subheader("🔮 Dự đoán thông minh")
-    if predict_button:
-        prediction = smart_predict(parsed_data)
-        st.success(f"✅ Ván tiếp theo có thể là: **{prediction}**")
+    if st.button("➕ Thêm"):
+        if new_result.upper() in ["P", "B", "T"]:
+            st.session_state.history.append(new_result.upper())
+            st.success(f"✅ Đã thêm: {new_result.upper()}")
+        else:
+            st.error("⚠️ Chỉ nhập: P / B / T")
+
+# --- Bộ lọc ---
+st.subheader("🔎 Lọc kết quả")
+filter_option = st.radio("Hiển thị:", ["Tất cả", "Chỉ P", "Chỉ B", "Chỉ T"], horizontal=True)
+
+def filter_history(history, option):
+    if option == "Tất cả":
+        return history
+    elif option == "Chỉ P":
+        return [x for x in history if x == "P"]
+    elif option == "Chỉ B":
+        return [x for x in history if x == "B"]
+    elif option == "Chỉ T":
+        return [x for x in history if x == "T"]
+    return history
+
+filtered_history = filter_history(st.session_state.history, filter_option)
+
+# --- Lịch sử kết quả ---
+st.subheader("📜 Lịch sử")
+st.markdown(f"Tổng: **{len(filtered_history)}** kết quả")
+st.write("➡️ " + " - ".join(filtered_history) if filtered_history else "Chưa có kết quả")
+
+# --- Dự đoán thông minh ---
+st.subheader("🤖 Dự đoán thông minh")
+
+def smart_predict(history):
+    if len(history) < 3:
+        return "Chưa đủ dữ liệu"
+    recent = history[-3:]
+    if recent.count("P") >= 2:
+        return "🔵 Dự đoán: **B**"
+    elif recent.count("B") >= 2:
+        return "🔴 Dự đoán: **P**"
     else:
-        st.info("⏳ Nhấn nút 'Dự đoán tiếp theo' để xem kết quả")
+        return "🟡 Dự đoán: **P hoặc B**"
 
-    st.subheader("📝 Ghi chú của bạn")
-    if raw_input and user_note:
-        st.write("📌 Ghi chú đã lưu:")
-        st.code(user_note)
-    elif raw_input:
-        st.info("Bạn có thể nhập ghi chú bên sidebar")
+if st.button("📈 Dự đoán tiếp theo"):
+    result = smart_predict(st.session_state.history)
+    st.info(result)
+else:
+    st.info("⏳ Nhấn nút để dự đoán...")
 
+# --- Ghi chú ---
+st.subheader("📝 Ghi chú của bạn")
+note = st.text_area("Viết ghi chú tại đây...")
+if st.button("💾 Lưu ghi chú"):
+    st.success("✅ Ghi chú đã lưu (tạm thời)")
 
-if st.sidebar.button("➕ Thêm kết quả"):
-    # thêm logic lưu kết quả
+# --- Footer ---
+st.markdown("---")
+st.caption("© 2025 by bạn & ChatGPT – Mobile friendly UI")
