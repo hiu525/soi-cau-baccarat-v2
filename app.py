@@ -1,8 +1,7 @@
-
 import streamlit as st
 import pandas as pd
 import random
-import altair as alt
+import altair as a
 from collections import Counter
 
 st.set_page_config(page_title="Tool Soi Cầu Baccarat", layout="wide")
@@ -98,8 +97,6 @@ with col2:
     elif raw_input:
         st.info("Bạn có thể nhập ghi chú bên sidebar")
 
-st.markdown("---")
-st.caption("© 2025 Tool soi cầu Baccarat thông minh - by bạn và st.sidebar.header("🎯 Nhập kết quả mới")
-new_result = st.sidebar.text_input("Nhập kết quả (P/B/T):")
+
 if st.sidebar.button("➕ Thêm kết quả"):
     # thêm logic lưu kết quả
