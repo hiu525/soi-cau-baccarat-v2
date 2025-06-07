@@ -99,4 +99,7 @@ with col2:
         st.info("Bạn có thể nhập ghi chú bên sidebar")
 
 st.markdown("---")
-st.caption("© 2025 Tool soi cầu Baccarat thông minh - by bạn và ChatGPT")
+st.caption("© 2025 Tool soi cầu Baccarat thông minh - by bạn và st.sidebar.header("🎯 Nhập kết quả mới")
+new_result = st.sidebar.text_input("Nhập kết quả (P/B/T):")
+if st.sidebar.button("➕ Thêm kết quả"):
+    # thêm logic lưu kết quả
